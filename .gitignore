@@ -1,0 +1,11 @@
+node_modules/
+dist/
+data/
+.env
+*.log
+.env.*
+!.env.example
+.vercel/
+coverage/
+artifacts/
+*.zip

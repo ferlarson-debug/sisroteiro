@@ -1,0 +1,81 @@
+name: Publicar no cPanel
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: cpanel-production
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: integration-only-password
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: sisroteiro_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:mysql
+        env:
+          TEST_DATABASE_URL: mysql://root:integration-only-password@127.0.0.1:3306/sisroteiro_test
+      - run: npm run test:ui
+      - run: npm run package:cpanel
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sisroteiro-cpanel
+          path: artifacts/sisroteiro-cpanel.tar.gz
+  deploy:
+    needs: package
+    if: vars.CPANEL_AUTO_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sisroteiro-cpanel
+          path: release
+      - name: Configurar SSH com host verificado
+        env:
+          DEPLOY_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.CPANEL_SSH_KNOWN_HOSTS }}
+        run: |
+          test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          umask 077
+          mkdir -p "$RUNNER_TEMP/cpanel-ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$RUNNER_TEMP/cpanel-ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/cpanel-ssh/known_hosts"
+      - name: Enviar pacote e solicitar reinício
+        env:
+          DEPLOY_HOST: ${{ vars.CPANEL_HOST }}
+          DEPLOY_USER: ${{ vars.CPANEL_USER }}
+          DEPLOY_PORT: ${{ vars.CPANEL_PORT || '22' }}
+        run: |
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$DEPLOY_USER" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_-]*$ ]]
+          [[ "$DEPLOY_PORT" =~ ^[0-9]+$ ]]
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          ssh_opts=(-i "$RUNNER_TEMP/cpanel-ssh/key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$RUNNER_TEMP/cpanel-ssh/known_hosts")
+          scp "${ssh_opts[@]}" -P "$DEPLOY_PORT" release/sisroteiro-cpanel.tar.gz "$DEPLOY_USER@$DEPLOY_HOST:sisroteiro-$GITHUB_SHA.tar.gz"
+          ssh "${ssh_opts[@]}" -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "bash -s -- sisroteiro-$GITHUB_SHA.tar.gz" < scripts/deploy-cpanel.sh
+      - name: Limpar chave temporária
+        if: always()
+        run: rm -rf -- "$RUNNER_TEMP/cpanel-ssh"
