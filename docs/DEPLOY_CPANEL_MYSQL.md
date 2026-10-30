@@ -100,3 +100,28 @@ As conexões com o seu cPanel e a OpenAI precisam ser validadas no servidor real
 Adicionar suporte MySQL não transfere registros do SQLite/PostgreSQL. Esses bancos são preservados; se já houver dados reais, faça uma migração específica, com backup e validação, antes de mudar `DATABASE_URL`.
 
 MySQL não possui as políticas RLS PostgreSQL usadas no esquema Supabase. O isolamento entre organizações é aplicado pela API e foi testado; mantenha o usuário do banco privado, sem acesso direto pelo navegador.
+
+
+## Configuração informada para esta hospedagem
+
+- Servidor cPanel informado: `pro119.dnspro.com.br`.
+- Banco: `vmcomunica_sisroteiro`.
+- Usuário MySQL: `vmcomunica_admin`.
+- Host de conexão do aplicativo no mesmo servidor: `localhost` (confirmar no painel/provedor).
+- Porta padrão: `3306` (confirmar se a hospedagem usa outra).
+
+Associe o usuário `vmcomunica_admin` ao banco `vmcomunica_sisroteiro` em MySQL Databases e conceda as permissões necessárias às tabelas da aplicação. No phpMyAdmin, selecione esse banco e importe `mysql/migrations/001_initial.sql`.
+
+Na aplicação Node.js do cPanel, configure privadamente:
+
+```dotenv
+DATABASE_URL=mysql://vmcomunica_admin:SENHA_CODIFICADA@localhost:3306/vmcomunica_sisroteiro
+NODE_ENV=production
+TRUST_PROXY=1
+```
+
+Substitua `SENHA_CODIFICADA` pela senha real do usuário MySQL, com percent-encoding para caracteres especiais. Esse texto é apenas um modelo e não conecta ao banco sem uma senha válida. Não copie a senha real para o GitHub ou para o chat. O arquivo `.env.example` não é carregado pela aplicação: utilize variáveis no painel ou um `.env` privado no Application root.
+
+O endereço HTTPS do servidor não confirma o endpoint MySQL. Se a aplicação estiver em outro servidor, solicite ao provedor o host MySQL, autorização de acesso remoto e certificado TLS; não substitua automaticamente `localhost` pelo endereço do painel.
+
+Reinicie a aplicação após salvar a configuração e valide `/api/health` no domínio do sistema. Se o gerenciador ainda informar que não encontra a pasta `venv`, o cadastro do ambiente Node.js precisa ser reparado primeiro; essa falha ocorre antes da conexão com o banco.
