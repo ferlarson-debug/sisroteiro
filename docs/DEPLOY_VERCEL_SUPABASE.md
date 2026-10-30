@@ -75,3 +75,12 @@ Vincule o GitHub ao projeto Vercel uma vez para habilitar deploys automáticos a
 A geração pede resposta estruturada aos modelos GPT e valida cenas e duração antes de salvar uma nova versão. Erros de autenticação, limite de uso, timeout ou resposta inválida preservam o roteiro salvo. A chave é lida apenas pelo backend. A tela Minha conta informa se a integração está configurada; configuração não é prova de uma chamada bem-sucedida.
 
 O editor utiliza duas colunas no desktop e uma cena por vez no celular, com navegação entre cenas e barra fixa para salvar/exportar. Todos os controles operam sobre os registros reais; aprovações e produção ainda não estão no menu porque esses módulos não foram implementados.
+
+
+## Trocar uma Vercel já publicada de MySQL para Supabase
+
+O adaptador é selecionado pelo protocolo de `DATABASE_URL`; nenhuma mudança no frontend é necessária. Importe primeiro o esquema PostgreSQL no projeto Supabase. Depois substitua a variável privada `DATABASE_URL` na Vercel pela URL do Transaction pooler e faça Redeploy. O valor de exemplo no GitHub não altera a variável já salva na Vercel. Preserve `AI_API_KEY` e não publique a connection string real no repositório.
+
+O endereço público `https://PROJECT_REF.supabase.co` e as chaves do SDK não substituem a connection string PostgreSQL. Use o host, usuário e porta exibidos em Connect, sem inferir o hostname do pooler a partir do nome do projeto.
+
+Se houver dados no MySQL, preserve-os e planeje uma importação específica; trocar `DATABASE_URL` não transfere esses dados. O gerenciamento Node.js/venv do cPanel não participa desse deploy na Vercel.

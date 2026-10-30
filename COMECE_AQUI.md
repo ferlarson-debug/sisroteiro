@@ -1,16 +1,26 @@
 # Publicar o Sisroteiro
 
-A configuração recomendada nesta entrega é **cPanel + MySQL + GitHub**, com geração por **API OpenAI**.
+## Topologia atual: Vercel + Supabase
 
-1. No cPanel, crie o banco MySQL e o usuário. Importe `mysql/migrations/001_initial.sql` pelo phpMyAdmin.
-2. Crie a aplicação em **Setup Node.js App/Application Manager**, com Node.js 22.12+ ou 24, modo Production, Application root `apps/sisroteiro` e startup **`app.cjs`**. Use domínio/subdomínio HTTPS na raiz.
-3. Configure `DATABASE_URL` MySQL, `NODE_ENV=production`, `TRUST_PROXY=1` (para Apache/Passenger como único proxy) e `AI_API_KEY` no ambiente privado da aplicação. A chave da API OpenAI é independente da assinatura ChatGPT.
-4. Instale o pacote pronto `sisroteiro-cpanel.tar.gz`, preservando `.env` e o symlink `node_modules` do CloudLinux. O pacote já traz frontend compilado e dependências de produção.
-5. Reinicie a aplicação e verifique `/api/health`.
-6. Envie o código-fonte ao GitHub. O workflow gera pacotes automaticamente; para instalar automaticamente via SSH, configure as variáveis e os segredos descritos no guia.
+A aplicação roda na **Vercel**. O caminho recomendado nesta configuração é usar **PostgreSQL do Supabase**, com geração por **API OpenAI**. Não é necessário cadastrar ou iniciar uma aplicação Node.js no cPanel.
 
-**Leia o passo a passo:** [cPanel, MySQL e GitHub](docs/DEPLOY_CPANEL_MYSQL.md).
+1. No projeto Supabase, abra o SQL Editor e execute `supabase/migrations/202610240001_initial.sql`. Não use a migração MySQL nesse banco.
+2. Abra **Connect → Transaction pooler** e copie a connection string PostgreSQL. Use o usuário, host e porta fornecidos pelo seu próprio projeto e substitua a senha, com percent-encoding dos caracteres especiais.
+3. No projeto Vercel, em **Settings → Environment Variables**, substitua `DATABASE_URL` pela conexão do Supabase no ambiente Production. Não basta alterar `.env.example` ou o código no GitHub: as variáveis do painel são independentes.
+4. Mantenha `AI_API_KEY` privada para a OpenAI. `AI_MODEL` é opcional, com padrão `gpt-4.1-mini`. Se a cadeia TLS exigir, configure também `SUPABASE_DB_CA` com o CA fornecido pelo Supabase.
+5. Faça um **Redeploy** após alterar as variáveis. Não use variáveis com prefixo `VITE_` para segredos.
+6. Verifique `/api/health` no domínio da Vercel: esperado `200` e `{"ok":true}`. Depois teste cadastro, cliente, projeto, salvamento e exportação.
 
-A opção anterior [Vercel + Supabase](docs/DEPLOY_VERCEL_SUPABASE.md) continua disponível com `DATABASE_URL` PostgreSQL. Não importe o SQL de um banco no outro. Não há migração automática de dados entre bancos.
+Leia o [guia completo Vercel + Supabase](docs/DEPLOY_VERCEL_SUPABASE.md). A autenticação permanece sendo a do Sisroteiro; não há dependência de Supabase Auth nesta etapa.
 
-Nunca envie `.env`, senhas ou chaves ao GitHub ou pelo chat. Os pacotes não contêm credenciais reais. Esta é a versão atual do MVP; os módulos ainda pendentes estão descritos no README.
+## Alternativa: Vercel + MySQL externo
+
+O código continua aceitando MySQL. Para manter o banco `vmcomunica_sisroteiro` no servidor `186.209.113.107:3306`, a hospedagem precisa liberar conexões externas vindas da Vercel, autorizar o usuário `vmcomunica_admin` para esses acessos e fornecer TLS verificável. Endereços de saída da Vercel podem variar conforme a configuração/plano; confirme com os dois provedores antes de definir regras de rede. `localhost` na Vercel não representa o seu servidor cPanel.
+
+Sem acesso remoto e TLS funcionando, somente preencher uma URL não conecta os serviços. A mudança para Supabase não transfere registros do MySQL automaticamente e não remove nenhum banco existente.
+
+## Alternativa: aplicação no cPanel
+
+Se decidir hospedar também a aplicação no cPanel, use o [guia cPanel + MySQL + GitHub](docs/DEPLOY_CPANEL_MYSQL.md) e o startup `app.cjs`. Apenas nessa alternativa o ambiente Node.js/venv do cPanel é necessário.
+
+Nunca envie `.env`, senhas ou chaves ao GitHub ou pelo chat. Os arquivos de exemplo não contêm credenciais reais. Esta é a versão atual do MVP; os módulos ainda pendentes estão descritos no README.

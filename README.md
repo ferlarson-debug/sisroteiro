@@ -2,9 +2,9 @@
 
 Plataforma em português para organizar clientes, briefings e roteiros audiovisuais.
 
-**Deploy principal:** [cPanel + MySQL + GitHub](docs/DEPLOY_CPANEL_MYSQL.md).
+**Topologia atual:** [Vercel + Supabase](docs/DEPLOY_VERCEL_SUPABASE.md).
 
-**Alternativa preservada:** [Vercel + Supabase](docs/DEPLOY_VERCEL_SUPABASE.md).
+**Alternativas preservadas:** Vercel com MySQL externo habilitado pela hospedagem, ou [aplicação e MySQL no cPanel](docs/DEPLOY_CPANEL_MYSQL.md).
 
 ## Stack
 
