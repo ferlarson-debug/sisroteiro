@@ -59,12 +59,10 @@ test("independent app instances share sessions and quotas; concurrent saves pres
     ).body;
     const results = await Promise.all(
       [1, 2].map((i) =>
-        agent
-          .put("/api/projects/" + p.id)
-          .send({
-            version: 1,
-            scenes: [{ visual: "Cena " + i, audio: "Texto", duration: 30 }],
-          }),
+        agent.put("/api/projects/" + p.id).send({
+          version: 1,
+          scenes: [{ visual: "Cena " + i, audio: "Texto", duration: 30 }],
+        }),
       ),
     );
     assert.deepEqual(results.map((r) => r.status).sort(), [200, 409]);
@@ -97,6 +95,7 @@ test("Vercel entry point returns a safe 503 when database configuration is missi
     app.use(handler);
     const res = await request(app).get("/api/health").expect(503);
     assert.equal(res.body.error.includes("Serviço indisponível"), true);
+    assert.equal(res.body.code, "DATABASE_URL_MISSING");
     assert.equal(JSON.stringify(res.body).includes("postgres://"), false);
   } finally {
     if (previous === undefined) delete process.env.DATABASE_URL;

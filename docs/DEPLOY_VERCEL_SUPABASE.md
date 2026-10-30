@@ -84,3 +84,20 @@ O adaptador é selecionado pelo protocolo de `DATABASE_URL`; nenhuma mudança no
 O endereço público `https://PROJECT_REF.supabase.co` e as chaves do SDK não substituem a connection string PostgreSQL. Use o host, usuário e porta exibidos em Connect, sem inferir o hostname do pooler a partir do nome do projeto.
 
 Se houver dados no MySQL, preserve-os e planeje uma importação específica; trocar `DATABASE_URL` não transfere esses dados. O gerenciamento Node.js/venv do cPanel não participa desse deploy na Vercel.
+
+## Diagnosticar erro de banco no deploy ativo
+
+Consulte `/api/health` no domínio da aplicação. A resposta pode incluir um código fixo de diagnóstico, sem senha, URL ou mensagem interna do driver:
+
+| Código | O que conferir |
+| --- | --- |
+| `DATABASE_URL_MISSING` | Variável `DATABASE_URL` ausente/vazia no deploy ativo. Cadastre no projeto Vercel correto, no ambiente correspondente (Production ou Preview), e faça Redeploy. |
+| `DATABASE_URL_INVALID` / `DATABASE_PROTOCOL_INVALID` / `DATABASE_ADDRESS_INVALID` | Copie a connection string PostgreSQL do pooler, sem `DATABASE_URL=` dentro do valor, sem colchetes do exemplo e com senha codificada para URL. Não use a URL HTTPS pública do Supabase. |
+| `DATABASE_AUTH_FAILED` | Usuário, senha do banco ou referência do projeto incorretos; confirme se está usando a senha atual após redefinição. |
+| `DATABASE_SCHEMA_MISSING` | Execute a migração PostgreSQL no mesmo projeto/banco apontado pela connection string. |
+| `DATABASE_TLS_FAILED` | Confira a conexão fornecida pelo Supabase e, se necessário, o certificado CA. Preserve a verificação TLS. |
+| `DATABASE_UNREACHABLE` | Host/porta, disponibilidade do projeto, restrições de rede ou limite de conexões. |
+| `DATABASE_NOT_FOUND` | Nome do banco na connection string. |
+| `API_INITIALIZATION_FAILED` | Consulte os logs da função na Vercel; a causa não foi identificada como uma configuração conhecida. |
+
+Alterar Environment Variables não modifica deployments antigos. Faça Redeploy com as variáveis atuais, verifique que terminou como Ready e abra o domínio desse novo deployment. Se estiver acessando um Preview, configure as variáveis de Preview ou use o domínio Production. Não envie o valor de `DATABASE_URL` nos prints ou no chat.

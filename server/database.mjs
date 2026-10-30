@@ -1,19 +1,29 @@
 import pg from "pg";
+import { configError } from "./database-errors.mjs";
 import { openMysql } from "./mysql.mjs";
 
 export function databaseConfig(env = process.env) {
   if (!env.DATABASE_URL)
-    throw new Error(
+    throw configError(
+      "DATABASE_URL_MISSING",
       "Configure DATABASE_URL com a conexão MySQL ou PostgreSQL.",
     );
   let url;
   try {
     url = new URL(env.DATABASE_URL);
   } catch {
-    throw new Error("DATABASE_URL inválida.");
+    throw configError("DATABASE_URL_INVALID", "DATABASE_URL inválida.");
   }
   if (!["postgres:", "postgresql:"].includes(url.protocol))
-    throw new Error("DATABASE_URL deve usar postgres:// ou postgresql://.");
+    throw configError(
+      "DATABASE_PROTOCOL_INVALID",
+      "DATABASE_URL deve usar postgres:// ou postgresql://.",
+    );
+  if (!url.hostname || !url.username || !url.pathname.slice(1) || url.hash)
+    throw configError(
+      "DATABASE_ADDRESS_INVALID",
+      "Informe usuário, host e banco válidos; codifique caracteres especiais da senha para URL.",
+    );
   const local =
     ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) && !env.VERCEL;
   // pg connection-string SSL options must not override certificate validation.

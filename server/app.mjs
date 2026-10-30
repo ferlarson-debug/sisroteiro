@@ -1,3 +1,4 @@
+import { databaseDiagnostic } from "./database-errors.mjs";
 import express from "express";
 import { generateScript, defaultModel } from "./ai.mjs";
 import {
@@ -425,6 +426,17 @@ export async function createApp(options = {}) {
       return res.status(400).json({ error: "JSON inválido" });
     if ([409, 502, 503].includes(err.status))
       return res.status(err.status).json({ error: err.message });
+    const databaseCode = databaseDiagnostic(err);
+    if (databaseCode) {
+      console.error("Database request failed:", databaseCode);
+      return res
+        .status(503)
+        .json({
+          error:
+            "Serviço de banco indisponível. Consulte o diagnóstico com o administrador.",
+          code: databaseCode,
+        });
+    }
     console.error("Request failed:", err.name, err.code || "");
     res.status(500).json({ error: "Não foi possível concluir a operação" });
   });
