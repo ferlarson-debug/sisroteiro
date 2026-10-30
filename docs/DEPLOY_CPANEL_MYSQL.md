@@ -105,6 +105,7 @@ MySQL não possui as políticas RLS PostgreSQL usadas no esquema Supabase. O iso
 ## Configuração informada para esta hospedagem
 
 - Servidor cPanel informado: `pro119.dnspro.com.br`.
+- IP informado: `186.209.113.107`.
 - Banco: `vmcomunica_sisroteiro`.
 - Usuário MySQL: `vmcomunica_admin`.
 - Host de conexão do aplicativo no mesmo servidor: `localhost` (confirmar no painel/provedor).
@@ -125,3 +126,5 @@ Substitua `SENHA_CODIFICADA` pela senha real do usuário MySQL, com percent-enco
 O endereço HTTPS do servidor não confirma o endpoint MySQL. Se a aplicação estiver em outro servidor, solicite ao provedor o host MySQL, autorização de acesso remoto e certificado TLS; não substitua automaticamente `localhost` pelo endereço do painel.
 
 Reinicie a aplicação após salvar a configuração e valide `/api/health` no domínio do sistema. Se o gerenciador ainda informar que não encontra a pasta `venv`, o cadastro do ambiente Node.js precisa ser reparado primeiro; essa falha ocorre antes da conexão com o banco.
+
+Para o workflow de publicação via SSH, a variável GitHub `CPANEL_HOST` pode usar `186.209.113.107` (ou o hostname, conforme o acesso fornecido pela hospedagem). Confirme a porta SSH e a impressão digital do host com o provedor antes de autorizar a conexão. A existência do IP não confirma que SSH ou MySQL remoto estejam liberados.
