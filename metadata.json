@@ -1,0 +1,5 @@
+{
+  "name": "Sisroteiro • Estúdio de criação",
+  "description": "Estúdio de criação e organização de roteiros audiovisuais, clientes, briefings e exportação.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
